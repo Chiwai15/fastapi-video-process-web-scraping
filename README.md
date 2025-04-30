@@ -169,7 +169,7 @@ This allows video files to persist across container restarts and be accessible f
 
 ## Font Fallback System
 
-- The service intelligently merges custom fonts with system fonts to handle missing characters across all languages and scripts (including CJK, Arabic, and Cyrillic). This premerging technology ensures text renders correctly with consistent styling regardless of the Unicode characters used.
+- The service intelligently merges custom fonts with system fonts to handle missing characters. This premerging technology ensures text renders correctly with consistent styling regardless of the Unicode characters used.
 
 
 ## Docker Environment
