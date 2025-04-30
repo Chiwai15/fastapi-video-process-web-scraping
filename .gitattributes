@@ -1,0 +1,6 @@
+# Ignore media, assets, and static HTML from linguist
+app/media/* linguist-vendored
+docs/* linguist-vendored
+*.png linguist-generated
+*.jpg linguist-generated
+*.html linguist-vendored
