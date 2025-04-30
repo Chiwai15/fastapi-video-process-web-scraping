@@ -3,9 +3,9 @@ from typing import Dict, List, Optional
 import aiohttp
 from bs4 import BeautifulSoup
 
-from app.core.decorators import error_handler, timing_decorator
-from app.core.exceptions import ScraperError
-from app.services.cache.redis_cache import RedisCache
+from core.decorators import error_handler, timing_decorator
+from core.exceptions import ScraperError
+from services.cache.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 

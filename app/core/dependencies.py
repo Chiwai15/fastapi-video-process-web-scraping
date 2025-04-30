@@ -6,10 +6,10 @@ from typing import Callable, Dict, AsyncGenerator, Awaitable
 from dependency_injector import containers, providers
 from fastapi import Depends
 
-from app.core.config import Settings, get_settings
-from app.services.cache.redis_cache import RedisCache
-from app.services.video.video_processor import VideoProcessor
-from app.services.scraper.science_news_scraper import ScienceNewsScraper
+from core.config import Settings, get_settings
+from services.cache.redis_cache import RedisCache
+from services.video.video_processor import VideoProcessor
+from services.scraper.science_news_scraper import ScienceNewsScraper
 
 
 # Move static methods to module-level functions

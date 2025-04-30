@@ -5,9 +5,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import health, trending, video
-from app.core.dependencies import container
-from app.core.config import get_settings
+from api.routes import health, trending, video
+from core.dependencies import container
+from core.config import get_settings
 
 # Set up logging
 logging.basicConfig(
@@ -24,7 +24,7 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     """
     Handle startup and shutdown events for the application.
-    This replaces the deprecated @app.on_event() decorator.
+    This replaces the deprecated @on_event() decorator.
     """
     # Startup
     logger.info("Starting Video Processing Service")
@@ -77,7 +77,7 @@ app = FastAPI(
 )
 
 # Wire up the dependency container
-container.wire(packages=["app.api.routes", "app.core.dependencies"])
+container.wire(packages=["api.routes", "core.dependencies"])
 
 # Configure CORS
 app.add_middleware(
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     import uvicorn
     
     uvicorn.run(
-        "app.main:app",
+        "main:app",
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG

@@ -3,8 +3,8 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 import redis.asyncio as aioredis
 
-from app.core.decorators import error_handler
-from app.core.exceptions import CacheError
+from core.decorators import error_handler
+from core.exceptions import CacheError
 
 logger = logging.getLogger(__name__)
 

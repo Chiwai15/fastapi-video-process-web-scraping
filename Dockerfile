@@ -65,4 +65,4 @@ ENV CACHE_TTL=600
 VOLUME ["/app/app/media/output"]
 
 # Run the application with proper host binding for container environment
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

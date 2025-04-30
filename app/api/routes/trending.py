@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Dict, List
 
-from app.core.dependencies import get_science_news_scraper
-from app.services.scraper.science_news_scraper import ScienceNewsScraper
-from app.core.decorators import api_error_handler
+from core.dependencies import get_science_news_scraper
+from services.scraper.science_news_scraper import ScienceNewsScraper
+from core.decorators import api_error_handler
 
 router = APIRouter(tags=["Trending News"])
 

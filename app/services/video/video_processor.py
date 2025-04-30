@@ -11,9 +11,9 @@ from moviepy.editor import (
 )
 from PIL import Image, ImageFont
 
-from app.core.decorators import error_handler, timing_decorator
-from app.core.exceptions import VideoProcessingError, ValidationError
-from app.utils.font_fallback import merge_missing_glyphs
+from core.decorators import error_handler, timing_decorator
+from core.exceptions import VideoProcessingError, ValidationError
+from utils.font_fallback import merge_missing_glyphs
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ class VideoProcessor:
 
     def _validate_font(self) -> None:
         """Validate that the font file exists."""
-        from app.core import moviepy_config
+        from core import moviepy_config
         if not moviepy_config.check_font_availability(self.font_path):
             raise VideoProcessingError(f"Default Font not found: {self.font_path}")
 
