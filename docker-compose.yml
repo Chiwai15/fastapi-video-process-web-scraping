@@ -7,9 +7,10 @@ services:
       - "8000:8000"
     volumes:
       - ./:/app
-      - ./app/media:/app/media
+      - ./app/media:/app/app/media
       - ./app/media/output:/app/app/media/output
     environment:
+      - PYTHONPATH=/app
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MAX_WORKERS=8

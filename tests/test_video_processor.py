@@ -4,8 +4,8 @@ from unittest.mock import patch, MagicMock, AsyncMock
 import asyncio
 pytest_plugins = ("pytest_asyncio",)
 
-from app.services.video.video_processor import VideoProcessor
-from app.core.exceptions import VideoProcessingError, ValidationError
+from services.video.video_processor import VideoProcessor
+from core.exceptions import VideoProcessingError, ValidationError
 
 @pytest.fixture
 def mock_process_pool():

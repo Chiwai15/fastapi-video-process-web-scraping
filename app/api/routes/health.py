@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from typing import Dict
 
-from app.core.dependencies import get_redis_cache
-from app.services.cache.redis_cache import RedisCache
+from core.dependencies import get_redis_cache
+from services.cache.redis_cache import RedisCache
 
 router = APIRouter(tags=["Health"])
 

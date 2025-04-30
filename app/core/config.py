@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # Media settings
     MEDIA_DIR: str = "app/media"
     OUTPUT_DIR: str = "app/media/output"
-    FONT_PATH: str = "/usr/share/fonts/truetype/" 
+    FONT_PATH: str = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" 
     DEFAULT_BG_IMAGE: str = "app/media/default_bg.jpg"
 
     # Scraper settings
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
         return {
             "media_dir": self.MEDIA_DIR,
             "output_dir": self.OUTPUT_DIR,
-            "font_path": self.FONT_PATH,
+            "font_path": "/usr/share/fonts/truetype/" + self.FONT_PATH,
             "default_bg": self.DEFAULT_BG_IMAGE,
         }
 

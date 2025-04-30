@@ -4,10 +4,10 @@ from typing import Dict, Optional, Tuple, List, Any
 import os
 from pydantic import BaseModel, Field
 
-from app.core.dependencies import get_video_processor
-from app.services.video.video_processor import VideoProcessor
-from app.core.config import get_settings
-from app.core.decorators import api_error_handler
+from core.dependencies import get_video_processor
+from services.video.video_processor import VideoProcessor
+from core.config import get_settings
+from core.decorators import api_error_handler
 
 router = APIRouter(tags=["Video Generation"])
 

@@ -14,7 +14,7 @@ build:
 	docker-compose build
 
 up:
-	docker-compose up
+	docker-compose up -d
 	@echo "Service running at http://localhost:8000"
 	@echo "API docs at http://localhost:8000/docs"
 
@@ -27,3 +27,10 @@ logs:
 clean:
 	docker-compose down -v
 	rm -rf app/media/output/*
+
+test:
+	docker-compose run --rm -e PYTHONPATH=/app/app app pytest tests
+
+shell:
+	docker-compose exec app /bin/bash || docker-compose exec app /bin/sh
+
