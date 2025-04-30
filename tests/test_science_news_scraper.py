@@ -1,0 +1,216 @@
+import pytest
+import os
+from unittest.mock import AsyncMock, patch, MagicMock
+from bs4 import BeautifulSoup
+import aiohttp
+from app.services.scraper.science_news_scraper import ScienceNewsScraper
+from app.core.exceptions import ScraperError
+
+# Path to the test asset HTML file
+TEST_HTML_PATH = os.path.join(os.path.dirname(__file__), "assets", "science_news.html")
+
+@pytest.fixture
+def html_content():
+    """Load the saved Science News HTML content from file."""
+    with open(TEST_HTML_PATH, 'r', encoding='utf-8') as f:
+        return f.read()
+
+@pytest.fixture
+def mock_cache():
+    """Mock Redis cache for testing."""
+    cache = AsyncMock()
+    cache.get.return_value = None  # Default to cache miss
+    cache.set.return_value = True
+    return cache
+
+@pytest.mark.asyncio
+async def test_get_trending_news_cached(mock_cache):
+    """Test that cached data is returned when available."""
+    # Setup
+    cached_data = [
+        {"title": "Cached Article", "category": "Science", "author": "Test Author", "image_url": "http://example.com/img.jpg"}
+    ]
+    mock_cache.get.return_value = cached_data
+    scraper = ScienceNewsScraper(cache=mock_cache)
+    
+    # Execute
+    result = await scraper.get_trending_news()
+    
+    # Verify
+    assert result == cached_data
+    mock_cache.get.assert_called_once_with(scraper.cache_key)
+    mock_cache.set.assert_not_called()
+
+@pytest.mark.asyncio
+async def test_get_trending_news_fresh(mock_cache, html_content):
+    """Test that fresh data is scraped and cached when cache is empty."""
+    # Setup - directly patch the scraper's _scrape_trending_news method
+    scraper = ScienceNewsScraper(cache=mock_cache)
+    
+    # Parse the HTML to get expected results
+    soup = BeautifulSoup(html_content, 'lxml')
+    carousel = soup.find('ol', class_='carousel__slides___eKqkJ')
+    
+    # If carousel not found, create some test data
+    if not carousel:
+        expected_data = [
+            {"title": "Test Article 1", "category": "Science", "author": "Author 1", "image_url": "http://example.com/img1.jpg"},
+            {"title": "Test Article 2", "category": "Physics", "author": "Author 2", "image_url": "http://example.com/img2.jpg"}
+        ]
+    else:
+        # Use the actual carousel data to create expected results
+        articles = carousel.find_all('li', class_='carousel__wrapper___wIECZ')
+        expected_data = []
+        
+        for article in articles[:3]:  # Just use the first 3 for simplicity
+            title_elem = article.find('h3', class_='carousel__title___1uDeB')
+            category_elem = article.find('a', class_='carousel__eyebrow___VMI-N')
+            author_elem = article.find_all('a', class_='byline-link')
+            image_elem = article.find('img')
+            
+            title = title_elem.get_text(strip=True) if title_elem else "Unknown Title"
+            category = category_elem.get_text(strip=True) if category_elem else "Science"
+            authors = ", ".join([a.get_text(strip=True) for a in author_elem]) if author_elem else "Science News Staff"
+            image_url = image_elem['src'] if image_elem and 'src' in image_elem.attrs else ""
+            
+            expected_data.append({
+                "title": title,
+                "category": category,
+                "author": authors,
+                "image_url": image_url
+            })
+    
+    # Patch the _scrape_trending_news method to return our expected data
+    with patch.object(scraper, '_scrape_trending_news', AsyncMock(return_value=expected_data)):
+        # Execute
+        result = await scraper.get_trending_news()
+        
+        # Verify
+        assert result == expected_data
+        
+        # Verify cache was updated
+        mock_cache.set.assert_called_once_with(
+            scraper.cache_key, 
+            expected_data, 
+            ttl=scraper.cache_ttl
+        )
+
+@pytest.mark.asyncio
+async def test_get_trending_news_force_refresh(mock_cache):
+    """Test that force_refresh ignores cache and fetches fresh data."""
+    # Setup
+    cached_data = [{"title": "Cached Article"}]
+    mock_cache.get.return_value = cached_data  # Cache has data
+    scraper = ScienceNewsScraper(cache=mock_cache)
+    
+    # Create some expected data for the mock
+    expected_data = [
+        {"title": "Fresh Article 1", "category": "Science", "author": "Author 1", "image_url": "http://example.com/img1.jpg"},
+        {"title": "Fresh Article 2", "category": "Physics", "author": "Author 2", "image_url": "http://example.com/img2.jpg"}
+    ]
+    
+    # Patch the _scrape_trending_news method
+    with patch.object(scraper, '_scrape_trending_news', AsyncMock(return_value=expected_data)):
+        # Execute with force_refresh=True
+        result = await scraper.get_trending_news(force_refresh=True)
+        
+        # Verify
+        assert result == expected_data
+        assert result != cached_data  # Should not be the cached data
+        
+        mock_cache.get.assert_not_called()  # Cache get should not be called
+        mock_cache.set.assert_called_once()  # Cache should be updated with fresh data
+
+@pytest.mark.asyncio
+async def test_get_trending_news_http_error(mock_cache):
+    """Test error handling when HTTP request fails."""
+    # Setup
+    scraper = ScienceNewsScraper(cache=mock_cache)
+    
+    # Patch the _scrape_trending_news method to raise an exception
+    with patch.object(scraper, '_scrape_trending_news', 
+                     AsyncMock(side_effect=ScraperError("Failed to scrape trending news: Connection failed"))):
+        # Execute & Verify
+        with pytest.raises(ScraperError) as excinfo:
+            await scraper.get_trending_news()
+        
+        assert "Failed to scrape trending news" in str(excinfo.value)
+
+@pytest.mark.asyncio
+async def test_parse_carousel_articles(html_content):
+    """Test parsing of carousel articles from the real Science News HTML."""
+    # Setup
+    scraper = ScienceNewsScraper(cache=AsyncMock())
+    soup = BeautifulSoup(html_content, 'lxml')
+    
+    # Find the carousel section
+    carousel = soup.find('ol', class_='carousel__slides___eKqkJ')
+    if not carousel:
+        pytest.skip("Carousel not found in HTML, can't test parsing")
+    
+    articles = carousel.find_all('li', class_='carousel__wrapper___wIECZ')
+    if not articles:
+        pytest.skip("No articles found in HTML, can't test parsing")
+    
+    # Execute
+    result = scraper._parse_carousel_articles(articles)
+    
+    # Verify
+    assert len(result) > 0
+    assert all(isinstance(item, dict) for item in result)
+    assert all("title" in item for item in result)
+    assert all("category" in item for item in result)
+    assert all("author" in item for item in result)
+    assert all("image_url" in item for item in result)
+
+def test_setup_test_directory():
+    """Test that the test assets directory exists."""
+    asset_dir = os.path.join(os.path.dirname(__file__), "assets")
+    assert os.path.exists(asset_dir), "The 'assets' directory does not exist. Create it and add science_news.html"
+    assert os.path.exists(TEST_HTML_PATH), f"The test HTML file {TEST_HTML_PATH} does not exist"
+
+def test_debug_html_structure(html_content):
+    """Debug the HTML structure to help with troubleshooting."""
+    soup = BeautifulSoup(html_content, 'lxml')
+    carousel = soup.find('ol', class_='carousel__slides___eKqkJ')
+    
+    if carousel:
+        articles = carousel.find_all('li', class_='carousel__wrapper___wIECZ')
+        print(f"\nFound {len(articles)} articles in the carousel")
+        
+        # Print details of first two articles
+        for i, article in enumerate(articles[:2]):
+            title_elem = article.find('h3', class_='carousel__title___1uDeB')
+            category_elem = article.find('a', class_='carousel__eyebrow___VMI-N')
+            author_elems = article.find_all('a', class_='byline-link')
+            image_elem = article.find('img')
+            
+            title = title_elem.get_text(strip=True) if title_elem else "No title"
+            category = category_elem.get_text(strip=True) if category_elem else "No category"
+            authors = ", ".join([a.get_text(strip=True) for a in author_elems]) if author_elems else "No author"
+            image_url = image_elem['src'] if image_elem and image_elem.has_attr('src') else "No image"
+            
+            print(f"Article {i+1}:")
+            print(f"  Title: {title}")
+            print(f"  Category: {category}")
+            print(f"  Author: {authors}")
+            print(f"  Image URL: {image_url[:50]}..." if len(image_url) > 50 else image_url)
+            print("")
+    else:
+        print("\nWarning: Carousel not found in HTML")
+        print("Looking for elements with similar classes...")
+        
+        # Try to find elements with similar class names
+        for class_part in ["carousel", "slides", "wrapper"]:
+            elements = soup.find_all(class_=lambda c: c and class_part in c)
+            if elements:
+                print(f"Found {len(elements)} elements with '{class_part}' in class name")
+                for i, el in enumerate(elements[:3]):
+                    print(f"  Element {i+1}: <{el.name}> with class '{el.get('class')}'")
+        
+        # Show what classes are available
+        print("\nAll classes in the document:")
+        all_classes = set()
+        for tag in soup.find_all(class_=True):
+            all_classes.update(tag.get('class', []))
+        print(", ".join(sorted(all_classes)[:20])) # Show first 20 classes

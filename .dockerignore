@@ -1,0 +1,49 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Environment and secrets
+.env
+.env.*
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Media outputs (generated content)
+media/output/∏
+*.mp4
+*.avi
+*.mov
+
+# Redis data
+dump.rdb
+*.rdb
+
+# Logs and temporary files
+logs/
+*.log
+tmp/
+temp/
+
+# Test coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Docker volumes
+redis-data/
+
+# Make sure fonts directory is tracked even if empty
+!media/fonts/.gitkeep
